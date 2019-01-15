@@ -4,7 +4,7 @@ use base64::{decode, encode};
 use pulldown_cmark as cmark;
 use tera::{to_value, Result as TeraResult, Value};
 
-pub fn markdown(value: Value, args: HashMap<String, Value>) -> TeraResult<Value> {
+pub fn markdown(value: &Value, args: &HashMap<String, Value>) -> TeraResult<Value> {
     let s = try_get_value!("markdown", "value", String, value);
     let inline = match args.get("inline") {
         Some(val) => try_get_value!("markdown", "inline", bool, val),
@@ -30,12 +30,12 @@ pub fn markdown(value: Value, args: HashMap<String, Value>) -> TeraResult<Value>
     Ok(to_value(&html).unwrap())
 }
 
-pub fn base64_encode(value: Value, _: HashMap<String, Value>) -> TeraResult<Value> {
+pub fn base64_encode(value: &Value, _: &HashMap<String, Value>) -> TeraResult<Value> {
     let s = try_get_value!("base64_encode", "value", String, value);
     Ok(to_value(&encode(s.as_bytes())).unwrap())
 }
 
-pub fn base64_decode(value: Value, _: HashMap<String, Value>) -> TeraResult<Value> {
+pub fn base64_decode(value: &Value, _: &HashMap<String, Value>) -> TeraResult<Value> {
     let s = try_get_value!("base64_decode", "value", String, value);
     Ok(to_value(&String::from_utf8(decode(s.as_bytes()).unwrap()).unwrap()).unwrap())
 }

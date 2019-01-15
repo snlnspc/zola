@@ -7,7 +7,7 @@ use tera::{Context, Tera};
 /// All the information from the zola site that is needed to render HTML from markdown
 #[derive(Debug)]
 pub struct RenderContext<'a> {
-    pub tera: &'a Tera,
+    pub tera: &'a Tera<'a>,
     pub config: &'a Config,
     pub tera_context: Context,
     pub current_page_permalink: &'a str,

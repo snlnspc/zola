@@ -28,7 +28,7 @@ use tera::{Context, Tera};
 use errors::{Result, Error};
 
 lazy_static! {
-    pub static ref ZOLA_TERA: Tera = {
+    pub static ref ZOLA_TERA: Tera<'static> = {
         let mut tera = Tera::default();
         tera.add_raw_templates(vec![
             ("404.html", include_str!("builtins/404.html")),
@@ -56,6 +56,6 @@ pub fn render_redirect_template(url: &str, tera: &Tera) -> Result<String> {
     let mut context = Context::new();
     context.insert("url", &url);
 
-    tera.render("internal/alias.html", &context)
+    tera.render("internal/alias.html", context)
         .map_err(|e| Error::chain(format!("Failed to render alias for '{}'", url), e))
 }

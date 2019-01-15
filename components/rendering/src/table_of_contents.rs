@@ -58,7 +58,7 @@ impl TempHeader {
         let anchor_link = if insert_anchor != InsertAnchor::None {
             let mut c = TeraContext::new();
             c.insert("id", &self.id);
-            tera.render("anchor-link.html", &c).unwrap()
+            tera.render("anchor-link.html", c).unwrap()
         } else {
             String::new()
         };

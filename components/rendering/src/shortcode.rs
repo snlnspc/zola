@@ -115,7 +115,7 @@ fn render_shortcode(
 
     let res = context
         .tera
-        .render(&tpl_name, &tera_context)
+        .render(&tpl_name, tera_context)
         .map_err(|e| Error::chain(format!("Failed to render {} shortcode", name), e))?;
 
     // Small hack to avoid having multiple blank lines because of Tera tags for example

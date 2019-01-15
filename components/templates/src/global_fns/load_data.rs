@@ -16,7 +16,7 @@ use std::sync::{Arc, Mutex};
 
 use csv::Reader;
 use std::collections::HashMap;
-use tera::{from_value, to_value, Error, GlobalFn, Map, Result, Value};
+use tera::{from_value, to_value, Error, Function, Map, Result, Value};
 
 static GET_DATA_ARGUMENT_ERROR_MESSAGE: &str =
     "`load_data`: requires EITHER a `path` or `url` argument";
@@ -170,32 +170,46 @@ fn get_output_format_from_args(
     OutputFormat::from_str(from_extension)
 }
 
-/// A global function to load data from a file or from a URL
+/// A Tera function to load data from a file or from a URL
 /// Currently the supported formats are json, toml, csv and plain text
-pub fn make_load_data(content_path: PathBuf, base_path: PathBuf) -> GlobalFn {
-    let mut headers = header::HeaderMap::new();
-    headers.insert(header::USER_AGENT, "zola".parse().unwrap());
-    let client = Arc::new(Mutex::new(Client::builder().build().expect("reqwest client build")));
-    let result_cache: Arc<Mutex<HashMap<u64, Value>>> = Arc::new(Mutex::new(HashMap::new()));
-    Box::new(move |args| -> Result<Value> {
-        let data_source = get_data_source_from_args(&content_path, &args)?;
+#[derive(Debug)]
+pub struct LoadData {
+    content_path: PathBuf,
+    base_path: PathBuf,
+    client: Arc<Mutex<Client>>,
+    cache: Arc<Mutex<HashMap<u64, Value>>>,
+}
+impl LoadData {
+    pub fn new(content_path: PathBuf, base_path: PathBuf) -> Self {
+        let client = Arc::new(Mutex::new(Client::builder().build().expect("reqwest client build")));
+        let cache: Arc<Mutex<HashMap<u64, Value>>> = Arc::new(Mutex::new(HashMap::new()));
+        Self {
+            content_path,
+            base_path,
+            client,
+            cache,
+        }
+    }
+}
 
+impl Function for LoadData {
+    fn call(&self, args: &HashMap<String, Value>) -> Result<Value> {
+        let data_source = get_data_source_from_args(&self.content_path, &args)?;
         let file_format = get_output_format_from_args(&args, &data_source)?;
-
         let cache_key = data_source.get_cache_key(&file_format);
 
-        let mut cache = result_cache.lock().expect("result cache lock");
-        let response_client = client.lock().expect("response client lock");
+        let mut cache = self.cache.lock().expect("result cache lock");
+        let response_client = self.client.lock().expect("response client lock");
         if let Some(cached_result) = cache.get(&cache_key) {
             return Ok(cached_result.clone());
         }
-
         let data = match data_source {
-            DataSource::Path(path) => read_data_file(&base_path, path),
+            DataSource::Path(path) => read_data_file(&self.base_path, path),
             DataSource::Url(url) => {
                 let mut response = response_client
                     .get(url.as_str())
                     .header(header::ACCEPT, file_format.as_accept_header())
+                    .header(header::USER_AGENT, "zola")
                     .send()
                     .and_then(|res| res.error_for_status())
                     .map_err(|e| {
@@ -223,7 +237,7 @@ pub fn make_load_data(content_path: PathBuf, base_path: PathBuf) -> GlobalFn {
         }
 
         result_value
-    })
+    }
 }
 
 /// Parse a JSON string and convert it to a Tera Value
