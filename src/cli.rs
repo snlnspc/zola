@@ -65,7 +65,11 @@ pub fn build_cli() -> App<'static, 'static> {
                     Arg::with_name("watch_only")
                         .long("watch-only")
                         .takes_value(false)
-                        .help("Do not start a server, just re-build project on changes")
+                        .help("Do not start a server, just re-build project on changes"),
+                    Arg::with_name("force_https")
+                        .long("force-https")
+                        .takes_value(false)
+                        .help("Force https URLs")
                 ]),
         ])
 }

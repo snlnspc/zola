@@ -121,6 +121,7 @@ fn create_new_site(
     base_url: &str,
     config_file: &str,
     watch_only: bool,
+    force_https: bool,
 ) -> Result<(Site, String)> {
     let mut site = Site::new(env::current_dir().unwrap(), config_file)?;
 
@@ -130,10 +131,15 @@ fn create_new_site(
         format!("{}:{}", base_url, port)
     };
     let address = format!("{}:{}", interface, port);
-    let base_url = if site.config.base_url.ends_with('/') {
-        format!("http://{}/", base_address)
+    let protocol = if force_https {
+        "https"
     } else {
-        format!("http://{}", base_address)
+        "http"
+    };
+    let base_url = if site.config.base_url.ends_with('/') {
+        format!("{}://{}/", protocol, base_address)
+    } else {
+        format!("{}://{}", protocol, base_address)
     };
 
     site.set_base_url(base_url);
@@ -174,9 +180,10 @@ pub fn serve(
     base_url: &str,
     config_file: &str,
     watch_only: bool,
+    force_https: bool,
 ) -> Result<()> {
     let start = Instant::now();
-    let (mut site, address) = create_new_site(interface, port, output_dir, base_url, config_file, watch_only)?;
+    let (mut site, address) = create_new_site(interface, port, output_dir, base_url, config_file, watch_only, force_https)?;
     console::report_elapsed_time(start);
 
     // Setup watchers
@@ -393,6 +400,7 @@ pub fn serve(
                                     base_url,
                                     config_file,
                                     watch_only,
+                                    force_https,
                                 )
                                 .unwrap()
                                 .0;
@@ -433,6 +441,7 @@ pub fn serve(
                                     base_url,
                                     config_file,
                                     watch_only,
+                                    force_https,
                                 )
                                 .unwrap()
                                 .0;
