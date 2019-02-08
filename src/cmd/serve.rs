@@ -120,10 +120,15 @@ fn create_new_site(
     output_dir: &str,
     base_url: &str,
     config_file: &str,
+    watch_only: bool,
 ) -> Result<(Site, String)> {
     let mut site = Site::new(env::current_dir().unwrap(), config_file)?;
 
-    let base_address = format!("{}:{}", base_url, port);
+    let base_address = if watch_only {
+        format!("{}", base_url)
+    } else {
+        format!("{}:{}", base_url, port)
+    };
     let address = format!("{}:{}", interface, port);
     let base_url = if site.config.base_url.ends_with('/') {
         format!("http://{}/", base_address)
@@ -171,7 +176,7 @@ pub fn serve(
     watch_only: bool,
 ) -> Result<()> {
     let start = Instant::now();
-    let (mut site, address) = create_new_site(interface, port, output_dir, base_url, config_file)?;
+    let (mut site, address) = create_new_site(interface, port, output_dir, base_url, config_file, watch_only)?;
     console::report_elapsed_time(start);
 
     // Setup watchers
@@ -387,6 +392,7 @@ pub fn serve(
                                     output_dir,
                                     base_url,
                                     config_file,
+                                    watch_only,
                                 )
                                 .unwrap()
                                 .0;
@@ -426,6 +432,7 @@ pub fn serve(
                                     output_dir,
                                     base_url,
                                     config_file,
+                                    watch_only,
                                 )
                                 .unwrap()
                                 .0;
